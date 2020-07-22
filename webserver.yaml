@@ -1,0 +1,61 @@
+#TO Expose webserver Pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: webserver-service
+  labels:
+    app: webserver
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: webserver
+  type: NodePort
+---
+
+#PVC to make Data Persistent of webserver
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: webserver-vol
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---   
+
+
+#To Create a Deployment From webserver Image
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webserver-deploy
+  labels:
+    app: webserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webserver
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: webserver
+    spec:
+      containers:
+      - image: httpd
+        name: webserver
+        ports:
+        - containerPort: 8000
+          name: webserver
+        volumeMounts:
+        - name: webserver-vol
+          mountPath: /usr/local/apache2/htdocs/
+      volumes:
+        - name: webserver-vol
+          persistentVolumeClaim:
+            claimName: webserver-vol
