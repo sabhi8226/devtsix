@@ -1,0 +1,61 @@
+#TO Expose Php Pod
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-service
+  labels:
+    app: php
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: php
+  type: NodePort
+---
+
+#PVC to make Data Persistent of php
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: php-vol
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---   
+
+
+#To Create a Deployment From php Image
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-deploy
+  labels:
+    app: php
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: php
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: php
+    spec:
+      containers:
+      - image: vimal13/apache-webserver-php
+        name: php
+        ports:
+        - containerPort: 80
+          name: php
+        volumeMounts:
+        - name: php-vol
+          mountPath: /var/www/html
+      volumes:
+        - name: php-vol
+          persistentVolumeClaim:
+            claimName: php-vol
