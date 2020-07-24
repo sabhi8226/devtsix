@@ -1,0 +1,79 @@
+job("job1"){
+description("Pull the data from github repo automatically when some developers push repo to github.")
+scm{
+github("a1-s2/devtsix","master")
+}
+triggers {
+scm("* * * * *")
+upstream('dsl_job', 'SUCCESS')
+}
+steps{
+shell(readFileFromWorkspace('copydata.sh'))
+  }
+}
+
+job("job2"){
+description("""1.Jenkins should automatically start the respective language interpreter
+2.Expose the pod so that testing team could can test it
+3.PVC to make the data to persistent""")
+
+triggers {
+upstream('job1', 'SUCCESS')
+}
+steps{
+shell(readFileFromWorkspace('monitorserver.sh'))
+  }
+}
+
+
+job("job3"){
+description("Test your app if it is working or not.")
+triggers {
+upstream('job2', 'SUCCESS')
+}
+steps{
+shell(readFileFromWorkspace('testserver.sh'))
+  }
+}
+
+
+job("job4"){
+
+triggers {
+
+upstream('job3', 'SUCCESS')
+}
+publishers {
+extendedEmail {
+recipientList('sabhi8226@gmail.com')
+defaultSubject('webpage is not working properly')
+defaultContent("""Goodmorning
+ABhi, Hope you are doing good.
+Kindly check your code it is not working properly""")
+contentType('text/plain')
+triggers {
+beforeBuild()
+stillUnstable {
+subject('Subject')
+content('Body')
+sendTo {
+developers()
+requester()
+culprits()
+	       }
+        }
+      }
+    }
+   }
+ }
+
+buildPipelineView('DevOps Task 6') {
+filterBuildQueue()
+filterExecutors()
+title('DevTsix')
+displayedBuilds(1)
+selectedJob('job1')
+alwaysAllowManualTrigger()
+showPipelineParameters()
+refreshFrequency(60)
+}
